@@ -232,7 +232,8 @@ class QwenConversationEntity(conversation.ConversationEntity, QwenBaseEntity):
             kwargs: dict[str, Any] = {
                 "model": model,
                 "messages": messages,
-                "max_tokens": options.get(CONF_MAX_TOKENS, DEFAULT_MAX_TOKENS),
+                # NumberSelector hands back a float; DashScope rejects 3000.0.
+                "max_tokens": int(options.get(CONF_MAX_TOKENS, DEFAULT_MAX_TOKENS)),
                 "temperature": options.get(CONF_TEMPERATURE, DEFAULT_TEMPERATURE),
                 "top_p": options.get(CONF_TOP_P, DEFAULT_TOP_P),
                 "stream": True,

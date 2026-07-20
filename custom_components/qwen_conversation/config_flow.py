@@ -313,7 +313,9 @@ class QwenOptionsFlow(OptionsFlow):
                 ),
                 vol.Required(CONF_CHAT_MODEL): _combobox(CHAT_MODELS),
                 vol.Required(CONF_MAX_TOKENS): NumberSelector(
-                    NumberSelectorConfig(min=1, max=32768, mode=NumberSelectorMode.BOX)
+                    NumberSelectorConfig(
+                        min=1, max=32768, step=1, mode=NumberSelectorMode.BOX
+                    )
                 ),
                 vol.Required(CONF_TEMPERATURE): NumberSelector(
                     NumberSelectorConfig(
