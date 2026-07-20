@@ -1,0 +1,92 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Alibaba Cloud Model Studio",
+        "description": "Enter your DashScope API key and pick the region your key belongs to. Keys are region-specific: a Singapore key will not work against the Beijing endpoint.",
+        "data": {
+          "api_key": "API key",
+          "region": "Region",
+          "chat_model": "Model"
+        },
+        "data_description": {
+          "api_key": "Created in the Model Studio console under API keys.",
+          "region": "Choose Custom to enter a workspace-scoped or self-hosted endpoint.",
+          "chat_model": "Pick a listed model or type any model ID, including a pinned snapshot such as qwen3.7-plus-2026-04-02."
+        }
+      },
+      "endpoint": {
+        "title": "Custom endpoint",
+        "description": "Enter the OpenAI-compatible base URL, for example {example}. The websocket URL used for CosyVoice is derived from the same host unless you override it.",
+        "data": {
+          "base_url": "Base URL",
+          "ws_url": "Websocket URL (optional)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter your API key",
+        "description": "Alibaba Cloud rejected the stored DashScope API key. Enter a new one to reconnect.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the endpoint. Check the URL and your network.",
+      "invalid_auth": "Alibaba Cloud rejected this API key. Check that it matches the selected region.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "reauth_successful": "Re-authentication was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Qwen Conversation options",
+        "data": {
+          "prompt": "Instructions",
+          "llm_hass_api": "Control Home Assistant",
+          "chat_model": "Conversation model",
+          "max_tokens": "Maximum tokens to return",
+          "temperature": "Temperature",
+          "top_p": "Top P",
+          "enable_thinking": "Enable thinking mode",
+          "tts_backend": "Text-to-speech provider",
+          "tts_model": "Text-to-speech model",
+          "tts_voice": "Voice",
+          "stt_backend": "Speech-to-text provider",
+          "stt_model": "Speech-to-text model"
+        },
+        "data_description": {
+          "prompt": "Instructions the model is given before every conversation.",
+          "llm_hass_api": "Leave empty to answer questions only, without controlling devices.",
+          "enable_thinking": "Lets the model reason before answering. More accurate but noticeably slower, so it is off by default for voice.",
+          "tts_voice": "CosyVoice voices belong to a specific model generation and are not interchangeable. Change the model first, then reopen this page to see the matching voices.",
+          "stt_model": "Qwen-ASR auto-detects the spoken language when the pipeline does not specify one."
+        }
+      }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "intl": "Singapore / international",
+        "cn": "Beijing / mainland China",
+        "custom": "Custom endpoint"
+      }
+    },
+    "tts_backend": {
+      "options": {
+        "cosyvoice": "CosyVoice (Alibaba)",
+        "qwen_tts": "Qwen-TTS (Alibaba)"
+      }
+    },
+    "stt_backend": {
+      "options": {
+        "qwen_asr": "Qwen-ASR (Alibaba)"
+      }
+    }
+  },
+  "title": "Qwen Conversation"
+}

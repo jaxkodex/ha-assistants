@@ -1,0 +1,15 @@
+{
+  "domain": "multi_assistant_conversation",
+  "name": "Multi Assistant Conversation",
+  "after_dependencies": ["assist_pipeline", "intent"],
+  "codeowners": ["@jvilcayp"],
+  "config_flow": true,
+  "dependencies": ["conversation", "stt", "tts"],
+  "documentation": "https://github.com/jaxkodex/ha-assistants",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/jaxkodex/ha-assistants/issues",
+  "loggers": ["openai", "dashscope"],
+  "requirements": ["openai==2.21.0", "dashscope==1.26.4"],
+  "version": "0.1.0"
+}
