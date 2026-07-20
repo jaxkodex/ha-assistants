@@ -52,8 +52,9 @@ host automatically, and can be overridden separately if needed.
 ### HACS
 
 1. HACS → **⋮** → **Custom repositories**.
-2. Add `https://github.com/jvilcayp/ha-alibaba` with category **Integration**.
-3. Find **Qwen Conversation** in HACS, install it, and restart Home Assistant.
+2. Add `https://github.com/jaxkodex/ha-assistants` with category **Integration**.
+3. Find **Multi Assistant Conversation** in HACS, install it, and restart Home
+   Assistant.
 
 ### Manual install on Home Assistant Green / HAOS
 

@@ -1,5 +1,5 @@
 {
-  "domain": "multi_assistant_conversation",
+  "domain": "qwen_conversation",
   "name": "Multi Assistant Conversation",
   "after_dependencies": ["assist_pipeline", "intent"],
   "codeowners": ["@jvilcayp"],
