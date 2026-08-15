@@ -23,6 +23,22 @@
           "ws_url": "Websocket URL (optional)"
         }
       },
+      "speech": {
+        "title": "Speech endpoint",
+        "description": "CosyVoice, Qwen-TTS and Qwen-ASR are not offered in every region. If speech models return \"Model not exist\" while the conversation agent works, point them at a region that serves them. Leave this on \"Same as conversation\" unless you need it.",
+        "data": {
+          "speech_region": "Speech region",
+          "speech_api_key": "Speech API key (optional)",
+          "speech_base_url": "Speech base URL (optional)",
+          "speech_ws_url": "Speech websocket URL (optional)"
+        },
+        "data_description": {
+          "speech_region": "The region that serves the speech models. Choose Custom to enter a workspace-scoped host.",
+          "speech_api_key": "Keys are region-specific, so a different region almost always needs its own key. Leave empty to reuse the conversation key.",
+          "speech_base_url": "Only needed for a custom speech region.",
+          "speech_ws_url": "Only needed to override the derived CosyVoice websocket host."
+        }
+      },
       "reauth_confirm": {
         "title": "Re-enter your API key",
         "description": "Alibaba Cloud rejected the stored DashScope API key. Enter a new one to reconnect.",
@@ -37,7 +53,8 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "reauth_successful": "Re-authentication was successful"
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Endpoints updated"
     }
   },
   "options": {
@@ -71,6 +88,14 @@
   "selector": {
     "region": {
       "options": {
+        "intl": "Singapore / international",
+        "cn": "Beijing / mainland China",
+        "custom": "Custom endpoint"
+      }
+    },
+    "speech_region": {
+      "options": {
+        "same": "Same as conversation",
         "intl": "Singapore / international",
         "cn": "Beijing / mainland China",
         "custom": "Custom endpoint"

@@ -101,7 +101,7 @@ class QwenSTTEntity(SpeechToTextEntity, QwenBaseEntity):
         options = self.entry.options
         backend = create_backend(
             options.get(CONF_STT_BACKEND, DEFAULT_STT_BACKEND),
-            self.entry.runtime_data.client,
+            self.entry.runtime_data.speech_client,
         )
 
         try:

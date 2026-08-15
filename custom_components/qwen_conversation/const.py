@@ -47,6 +47,27 @@ HTTP_URLS: Final[dict[str, str]] = {
 
 DEFAULT_REGION: Final = REGION_INTL
 
+# --- Speech endpoint override ------------------------------------------------
+# Alibaba does not serve the same catalogue in every region. An account whose
+# chat models live in one region can find that CosyVoice, Qwen-TTS and Qwen-ASR
+# are only offered in another, where they need a key issued for that region —
+# the symptom is ``Model not exist`` from every speech model while the
+# conversation agent works. These settings point the two speech platforms at a
+# second endpoint. When they are unset the speech platforms reuse the
+# conversation endpoint and key, which is the previous behaviour.
+
+CONF_SPEECH_REGION: Final = "speech_region"
+CONF_SPEECH_API_KEY: Final = "speech_api_key"
+CONF_SPEECH_BASE_URL: Final = "speech_base_url"
+CONF_SPEECH_WS_URL: Final = "speech_ws_url"
+
+# Sentinel meaning "use whatever the conversation agent uses".
+REGION_SAME: Final = "same"
+
+SPEECH_REGIONS: Final = [REGION_SAME, REGION_INTL, REGION_CN, REGION_CUSTOM]
+
+DEFAULT_SPEECH_REGION: Final = REGION_SAME
+
 # --- Conversation options ----------------------------------------------------
 
 CONF_CHAT_MODEL: Final = "chat_model"

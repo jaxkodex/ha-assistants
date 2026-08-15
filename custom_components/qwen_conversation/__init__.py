@@ -24,11 +24,17 @@ from .const import (
     BASE_URLS,
     CONF_BASE_URL,
     CONF_REGION,
+    CONF_SPEECH_API_KEY,
+    CONF_SPEECH_BASE_URL,
+    CONF_SPEECH_REGION,
+    CONF_SPEECH_WS_URL,
     CONF_WS_URL,
     DEFAULT_REGION,
+    DEFAULT_SPEECH_REGION,
     DOMAIN,
     HTTP_URLS,
     LOGGER,
+    REGION_SAME,
     WS_URLS,
 )
 
@@ -43,13 +49,24 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 @dataclass(slots=True)
 class QwenRuntimeData:
-    """Everything both platforms need, resolved once at setup."""
+    """Everything the platforms need, resolved once at setup.
+
+    The ``speech_*`` fields exist because the speech models are not always
+    served from the same region as the chat models. They fall back to their
+    conversation counterparts, so a single-region deployment sees no
+    difference — and ``speech_client`` is then literally ``client``.
+    """
 
     client: openai.AsyncOpenAI
     api_key: str
     base_url: str
     ws_url: str
     http_url: str
+    speech_client: openai.AsyncOpenAI
+    speech_api_key: str
+    speech_base_url: str
+    speech_ws_url: str
+    speech_http_url: str
 
 
 type QwenConfigEntry = ConfigEntry[QwenRuntimeData]
@@ -73,6 +90,36 @@ def resolve_endpoints(data: dict) -> tuple[str, str, str]:
     http_url = HTTP_URLS.get(region) or _swap_path(base_url, "https", "api/v1")
 
     return base_url, ws_url, http_url
+
+
+def resolve_speech_endpoints(data: dict) -> tuple[str, str, str, str]:
+    """Return the (compatible-mode, websocket, http, api key) used for speech.
+
+    Falls back to the conversation endpoint and key whenever no separate speech
+    region is configured, so entries created before this option existed keep
+    working unchanged.
+    """
+    region = data.get(CONF_SPEECH_REGION, DEFAULT_SPEECH_REGION)
+
+    if region == REGION_SAME:
+        base_url, ws_url, http_url = resolve_endpoints(data)
+        return base_url, ws_url, http_url, data[CONF_API_KEY]
+
+    if (base_url := data.get(CONF_SPEECH_BASE_URL)) is None:
+        base_url = BASE_URLS[region]
+
+    if (ws_url := data.get(CONF_SPEECH_WS_URL)) is None:
+        ws_url = WS_URLS.get(region) or _swap_path(
+            base_url, "wss", "api-ws/v1/inference"
+        )
+
+    http_url = HTTP_URLS.get(region) or _swap_path(base_url, "https", "api/v1")
+
+    # Keys are region-specific, but a workspace may share one across regions,
+    # so an explicit speech key is optional.
+    api_key = data.get(CONF_SPEECH_API_KEY) or data[CONF_API_KEY]
+
+    return base_url, ws_url, http_url, api_key
 
 
 def _swap_path(base_url: str, scheme: str, path: str) -> str:
@@ -114,12 +161,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: QwenConfigEntry) -> bool
         # That is not fatal — only auth and connectivity failures are.
         LOGGER.debug("Could not list models on %s, continuing anyway: %s", base_url, err)
 
+    (
+        speech_base_url,
+        speech_ws_url,
+        speech_http_url,
+        speech_api_key,
+    ) = resolve_speech_endpoints(dict(entry.data))
+
+    # Only pay for a second client when the speech endpoint actually differs;
+    # the common case is one region for everything.
+    if (speech_base_url, speech_api_key) == (base_url, api_key):
+        speech_client = client
+    else:
+        LOGGER.debug("Speech platforms using separate endpoint %s", speech_base_url)
+        speech_client = openai.AsyncOpenAI(
+            api_key=speech_api_key,
+            base_url=speech_base_url,
+            http_client=get_async_client(hass),
+        )
+        await hass.async_add_executor_job(speech_client.platform_headers)
+
     entry.runtime_data = QwenRuntimeData(
         client=client,
         api_key=api_key,
         base_url=base_url,
         ws_url=ws_url,
         http_url=http_url,
+        speech_client=speech_client,
+        speech_api_key=speech_api_key,
+        speech_base_url=speech_base_url,
+        speech_ws_url=speech_ws_url,
+        speech_http_url=speech_http_url,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

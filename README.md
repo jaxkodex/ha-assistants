@@ -38,6 +38,28 @@ All inference is remote. Nothing runs locally, and no model is bundled.
 | Beijing / mainland China | `https://dashscope.aliyuncs.com/compatible-mode/v1` | You created your key on the mainland console |
 | Custom | whatever you enter | Workspace-scoped or self-hosted deployments |
 
+### When speech lives in a different region
+
+Alibaba does not serve the same catalogue everywhere. An account can have chat
+models in one region while CosyVoice, Qwen-TTS and Qwen-ASR are only offered in
+another. The symptom is unmistakable: the conversation agent answers fine, and
+**every** speech model fails with `Model not exist` — including old ones like
+`cosyvoice-v1`. Changing the model or the voice does not help, because the
+model is not missing, the region is wrong.
+
+The setup flow's **Speech endpoint** step points the two speech platforms at a
+second region, leaving the conversation agent where it is:
+
+| Field | Notes |
+| --- | --- |
+| Speech region | `Same as conversation` (default), a preset, or Custom |
+| Speech API key | Keys are region-specific, so a second region nearly always needs its own key. Empty reuses the conversation key. |
+| Speech base URL | Only for a custom speech region |
+| Speech websocket URL | Only to override the derived CosyVoice host |
+
+An existing entry can be changed the same way through **Reconfigure** on the
+integration entry, without deleting and re-adding it.
+
 Alibaba is migrating to per-workspace hostnames of the form
 `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1`.
 The two hostnames above are documented as legacy but still functional. If you

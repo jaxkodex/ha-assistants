@@ -92,9 +92,11 @@ class QwenTTSEntity(TextToSpeechEntity, QwenBaseEntity):
         runtime = self.entry.runtime_data
         backend_id = self._backend_id
         endpoint = (
-            runtime.http_url if backend_id == TTS_BACKEND_QWEN else runtime.ws_url
+            runtime.speech_http_url
+            if backend_id == TTS_BACKEND_QWEN
+            else runtime.speech_ws_url
         )
-        return create_backend(backend_id, self.hass, runtime.api_key, endpoint)
+        return create_backend(backend_id, self.hass, runtime.speech_api_key, endpoint)
 
     @property
     def default_options(self) -> Mapping[str, Any]:

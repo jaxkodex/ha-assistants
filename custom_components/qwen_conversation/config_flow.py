@@ -31,7 +31,7 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from . import QwenConfigEntry, resolve_endpoints
+from . import QwenConfigEntry, resolve_endpoints, resolve_speech_endpoints
 from .stt_backend import BACKENDS as STT_BACKENDS
 from .const import (
     BASE_URLS,
@@ -42,6 +42,10 @@ from .const import (
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_REGION,
+    CONF_SPEECH_API_KEY,
+    CONF_SPEECH_BASE_URL,
+    CONF_SPEECH_REGION,
+    CONF_SPEECH_WS_URL,
     CONF_STT_BACKEND,
     CONF_STT_MODEL,
     CONF_TEMPERATURE,
@@ -57,6 +61,7 @@ from .const import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_NAME,
     DEFAULT_REGION,
+    DEFAULT_SPEECH_REGION,
     DEFAULT_STT_BACKEND,
     DEFAULT_STT_MODEL,
     DEFAULT_TEMPERATURE,
@@ -70,7 +75,9 @@ from .const import (
     QWEN_TTS_MODELS,
     QWEN_TTS_VOICES,
     REGION_CUSTOM,
+    REGION_SAME,
     REGIONS,
+    SPEECH_REGIONS,
     TTS_BACKEND_COSYVOICE,
     TTS_BACKEND_QWEN,
 )
@@ -123,6 +130,28 @@ STEP_ENDPOINT_SCHEMA = vol.Schema(
 )
 
 
+STEP_SPEECH_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_SPEECH_REGION, default=DEFAULT_SPEECH_REGION): SelectSelector(
+            SelectSelectorConfig(
+                options=SPEECH_REGIONS,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="speech_region",
+            )
+        ),
+        vol.Optional(CONF_SPEECH_API_KEY): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.PASSWORD)
+        ),
+        vol.Optional(CONF_SPEECH_BASE_URL): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.URL)
+        ),
+        vol.Optional(CONF_SPEECH_WS_URL): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.URL)
+        ),
+    }
+)
+
+
 async def validate_credentials(hass, api_key: str, base_url: str) -> None:
     """Raise if DashScope will not accept these credentials.
 
@@ -167,7 +196,7 @@ class QwenConfigFlow(ConfigFlow, domain=DOMAIN):
 
             errors = await self._async_validate(BASE_URLS[user_input[CONF_REGION]])
             if not errors:
-                return self._create_entry()
+                return await self.async_step_speech()
 
         return self.async_show_form(
             step_id="user",
@@ -187,7 +216,7 @@ class QwenConfigFlow(ConfigFlow, domain=DOMAIN):
             self._data.update(user_input)
             errors = await self._async_validate(user_input[CONF_BASE_URL])
             if not errors:
-                return self._create_entry()
+                return await self.async_step_speech()
 
         return self.async_show_form(
             step_id="endpoint",
@@ -203,10 +232,60 @@ class QwenConfigFlow(ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def _async_validate(self, base_url: str) -> dict[str, str]:
-        """Return form errors for the collected credentials."""
+    async def async_step_speech(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Optionally point the speech platforms at a second region.
+
+        Alibaba does not offer CosyVoice, Qwen-TTS and Qwen-ASR everywhere the
+        chat models are available, so an account can need a different endpoint
+        — and usually a different key — for speech alone.
+        """
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            speech = {key: value for key, value in user_input.items() if value}
+            self._data.update(speech)
+
+            if speech.get(CONF_SPEECH_REGION, REGION_SAME) == REGION_SAME:
+                return self._create_entry()
+
+            base_url, _, _, api_key = resolve_speech_endpoints(self._data)
+            errors = await self._async_validate(base_url, api_key=api_key)
+            if not errors:
+                return self._create_entry()
+
+        return self.async_show_form(
+            step_id="speech",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_SPEECH_SCHEMA, user_input
+            ),
+            errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let an existing entry change its endpoints without being deleted."""
+        entry = self._get_reconfigure_entry()
+        self._data = {
+            **dict(entry.data),
+            CONF_CHAT_MODEL: entry.options.get(CONF_CHAT_MODEL, DEFAULT_CHAT_MODEL),
+        }
+        return await self.async_step_speech(user_input)
+
+    async def _async_validate(
+        self, base_url: str, api_key: str | None = None
+    ) -> dict[str, str]:
+        """Return form errors for the collected credentials.
+
+        ``api_key`` defaults to the conversation key; the speech step passes the
+        separate key when one was entered.
+        """
         try:
-            await validate_credentials(self.hass, self._data[CONF_API_KEY], base_url)
+            await validate_credentials(
+                self.hass, api_key or self._data[CONF_API_KEY], base_url
+            )
         except openai.AuthenticationError:
             return {"base": "invalid_auth"}
         except openai.APIConnectionError:
@@ -221,13 +300,28 @@ class QwenConfigFlow(ConfigFlow, domain=DOMAIN):
         data = {
             key: value
             for key, value in self._data.items()
-            if key in (CONF_API_KEY, CONF_REGION, CONF_BASE_URL, CONF_WS_URL)
+            if key
+            in (
+                CONF_API_KEY,
+                CONF_REGION,
+                CONF_BASE_URL,
+                CONF_WS_URL,
+                CONF_SPEECH_REGION,
+                CONF_SPEECH_API_KEY,
+                CONF_SPEECH_BASE_URL,
+                CONF_SPEECH_WS_URL,
+            )
         }
         options = {CONF_CHAT_MODEL: self._data[CONF_CHAT_MODEL]}
 
         if self.source == "reauth":
             return self.async_update_reload_and_abort(
                 self._get_reauth_entry(), data_updates=data
+            )
+
+        if self.source == "reconfigure":
+            return self.async_update_reload_and_abort(
+                self._get_reconfigure_entry(), data=data
             )
 
         return self.async_create_entry(title=DEFAULT_NAME, data=data, options=options)

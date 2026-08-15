@@ -7,19 +7,27 @@ from unittest.mock import AsyncMock, patch
 import openai
 import pytest
 
-from custom_components.qwen_conversation import resolve_endpoints
+from custom_components.qwen_conversation import (
+    resolve_endpoints,
+    resolve_speech_endpoints,
+)
 from custom_components.qwen_conversation.const import (
     BASE_URLS,
     CONF_BASE_URL,
     CONF_REGION,
+    CONF_SPEECH_API_KEY,
+    CONF_SPEECH_BASE_URL,
+    CONF_SPEECH_REGION,
     CONF_WS_URL,
     HTTP_URLS,
     REGION_CN,
     REGION_CUSTOM,
     REGION_INTL,
+    REGION_SAME,
     WS_URLS,
 )
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
 
 
@@ -58,6 +66,71 @@ def test_resolve_endpoints_honours_explicit_ws_override() -> None:
     )
 
     assert ws_url == "wss://b.example/api-ws/v1/inference"
+
+
+def test_speech_endpoints_default_to_the_conversation_ones() -> None:
+    """Without a speech region, speech reuses the conversation endpoint."""
+    data = {CONF_REGION: REGION_INTL, CONF_API_KEY: "chat-key"}
+
+    base_url, ws_url, http_url, api_key = resolve_speech_endpoints(data)
+
+    assert (base_url, ws_url, http_url) == resolve_endpoints(data)
+    assert api_key == "chat-key"
+
+
+def test_speech_endpoints_can_target_a_second_region() -> None:
+    """Speech can live in another region than the chat models."""
+    base_url, ws_url, http_url, api_key = resolve_speech_endpoints(
+        {
+            CONF_REGION: REGION_CUSTOM,
+            CONF_BASE_URL: "https://eu.example/compatible-mode/v1",
+            CONF_API_KEY: "chat-key",
+            CONF_SPEECH_REGION: REGION_INTL,
+            CONF_SPEECH_API_KEY: "speech-key",
+        }
+    )
+
+    assert base_url == BASE_URLS[REGION_INTL]
+    assert ws_url == WS_URLS[REGION_INTL]
+    assert http_url == HTTP_URLS[REGION_INTL]
+    assert api_key == "speech-key"
+
+
+def test_speech_endpoints_fall_back_to_the_chat_key() -> None:
+    """A shared key stays usable when only the region differs."""
+    _, _, _, api_key = resolve_speech_endpoints(
+        {
+            CONF_REGION: REGION_CN,
+            CONF_API_KEY: "chat-key",
+            CONF_SPEECH_REGION: REGION_INTL,
+        }
+    )
+
+    assert api_key == "chat-key"
+
+
+def test_speech_endpoints_derive_siblings_for_a_custom_speech_host() -> None:
+    """A custom speech host gets matching websocket and HTTP URLs."""
+    _, ws_url, http_url, _ = resolve_speech_endpoints(
+        {
+            CONF_REGION: REGION_INTL,
+            CONF_API_KEY: "chat-key",
+            CONF_SPEECH_REGION: REGION_CUSTOM,
+            CONF_SPEECH_BASE_URL: "https://sp.example/compatible-mode/v1",
+        }
+    )
+
+    assert ws_url == "wss://sp.example/api-ws/v1/inference"
+    assert http_url == "https://sp.example/api/v1"
+
+
+def test_speech_region_same_is_the_documented_sentinel() -> None:
+    """An explicit "same" behaves like an absent speech region."""
+    data = {CONF_REGION: REGION_CN, CONF_API_KEY: "chat-key"}
+
+    assert resolve_speech_endpoints({**data, CONF_SPEECH_REGION: REGION_SAME}) == (
+        resolve_speech_endpoints(data)
+    )
 
 
 async def test_setup_and_unload(
