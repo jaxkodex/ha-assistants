@@ -10,6 +10,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/jaxkodex/ha-assistants/issues",
   "loggers": ["openai", "dashscope"],
-  "requirements": ["openai==2.21.0", "dashscope==1.26.4"],
-  "version": "0.1.2"
+  "requirements": ["openai==2.45.0", "dashscope==1.26.4"],
+  "version": "0.1.3"
 }
