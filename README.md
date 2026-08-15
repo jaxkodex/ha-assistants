@@ -140,8 +140,20 @@ Everything is configured through the UI; there is no YAML.
 | Conversation model | `qwen3.7-plus` | Any model ID; pinned snapshots like `qwen3.7-plus-2026-04-02` work |
 | Temperature / Top P / Max tokens | 1.0 / 1.0 / 3000 | |
 | Enable thinking mode | off | More accurate, noticeably slower — usually not worth it for voice |
+| Keep listening after each reply | off | See below |
 | Text-to-speech provider | CosyVoice | Or Qwen-TTS |
 | Speech-to-text provider | Qwen-ASR | |
+
+### Talking without repeating the wake word
+
+Home Assistant reopens a satellite's microphone by itself when a reply ends in a
+question mark, so answering a question back needs no wake word. That is core
+behaviour and needs nothing from this integration.
+
+**Keep listening after each reply** widens it to every reply, so a follow-up
+command never needs the wake word. The cost is real: the microphone re-arms
+after each answer, so more room audio is streamed to Alibaba and ordinary
+conversation is more likely to be picked up as a command. It is off by default.
 
 ### Using it in a voice pipeline
 

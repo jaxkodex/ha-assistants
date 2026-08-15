@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from custom_components.qwen_conversation.const import CONF_FOLLOW_UP
 from custom_components.qwen_conversation.conversation import (
     _convert_content_to_messages,
     _transform_stream,
@@ -185,3 +186,32 @@ async def test_conversation_answers(
     assert (
         result.response.speech["plain"]["speech"] == "The kitchen light is on."
     )
+    # Home Assistant's own rule: a statement does not reopen the microphone.
+    assert result.continue_conversation is False
+
+
+async def test_follow_up_keeps_the_conversation_open(
+    hass: HomeAssistant, init_integration, mock_openai
+) -> None:
+    """With follow-up on, a statement still reopens the microphone."""
+    hass.config_entries.async_update_entry(
+        init_integration,
+        options={**init_integration.options, CONF_FOLLOW_UP: True},
+    )
+    await hass.async_block_till_done()
+
+    async def stream():
+        yield _chunk(content="The kitchen light is on.")
+        yield _chunk(finish_reason="stop")
+
+    mock_openai.chat.completions.create = AsyncMock(return_value=stream())
+
+    result = await conversation.async_converse(
+        hass,
+        "is the kitchen light on?",
+        None,
+        None,
+        agent_id="conversation.qwen_conversation",
+    )
+
+    assert result.continue_conversation is True

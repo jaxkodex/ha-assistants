@@ -78,6 +78,13 @@ CONF_TOP_P: Final = "top_p"
 CONF_ENABLE_THINKING: Final = "enable_thinking"
 CONF_RECOMMENDED: Final = "recommended"
 
+# Home Assistant reopens the microphone on its own when a reply ends in a
+# question mark. Turning this on keeps it open after every reply instead, so a
+# follow-up needs no second wake word — at the cost of streaming more room
+# audio to DashScope and picking up more stray speech.
+CONF_FOLLOW_UP: Final = "follow_up"
+DEFAULT_FOLLOW_UP: Final = False
+
 # Verified as available through DashScope compatible-mode as of 2026-07.
 # The selector is a combobox, so unlisted or pinned dated snapshots such as
 # ``qwen3.6-flash-2026-04-16`` can also be entered by hand.

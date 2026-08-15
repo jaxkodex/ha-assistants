@@ -22,12 +22,14 @@ from .const import (
     BACKOFF_MULTIPLIER,
     CONF_CHAT_MODEL,
     CONF_ENABLE_THINKING,
+    CONF_FOLLOW_UP,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_TEMPERATURE,
     CONF_TOP_P,
     DEFAULT_CHAT_MODEL,
     DEFAULT_ENABLE_THINKING,
+    DEFAULT_FOLLOW_UP,
     DEFAULT_MAX_TOKENS,
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_P,
@@ -211,7 +213,15 @@ class QwenConversationEntity(conversation.ConversationEntity, QwenBaseEntity):
 
         await self._async_converse(chat_log)
 
-        return conversation.async_get_result_from_chat_log(user_input, chat_log)
+        result = conversation.async_get_result_from_chat_log(user_input, chat_log)
+
+        # Home Assistant already continues on its own when the reply ends in a
+        # question mark; this widens that to every reply so a satellite does
+        # not need a second wake word for a follow-up.
+        if options.get(CONF_FOLLOW_UP, DEFAULT_FOLLOW_UP):
+            result.continue_conversation = True
+
+        return result
 
     async def _async_converse(self, chat_log: conversation.ChatLog) -> None:
         """Drive the model until it stops asking for tools."""

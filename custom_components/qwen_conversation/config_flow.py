@@ -39,6 +39,7 @@ from .const import (
     CONF_BASE_URL,
     CONF_CHAT_MODEL,
     CONF_ENABLE_THINKING,
+    CONF_FOLLOW_UP,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_REGION,
@@ -58,6 +59,7 @@ from .const import (
     COSYVOICE_VOICES,
     DEFAULT_CHAT_MODEL,
     DEFAULT_ENABLE_THINKING,
+    DEFAULT_FOLLOW_UP,
     DEFAULT_MAX_TOKENS,
     DEFAULT_NAME,
     DEFAULT_REGION,
@@ -422,6 +424,7 @@ class QwenOptionsFlow(OptionsFlow):
                     )
                 ),
                 vol.Required(CONF_ENABLE_THINKING): bool,
+                vol.Required(CONF_FOLLOW_UP): bool,
                 vol.Required(CONF_TTS_BACKEND): SelectSelector(
                     SelectSelectorConfig(
                         options=[TTS_BACKEND_COSYVOICE, TTS_BACKEND_QWEN],
@@ -452,6 +455,7 @@ class QwenOptionsFlow(OptionsFlow):
             CONF_ENABLE_THINKING: options.get(
                 CONF_ENABLE_THINKING, DEFAULT_ENABLE_THINKING
             ),
+            CONF_FOLLOW_UP: options.get(CONF_FOLLOW_UP, DEFAULT_FOLLOW_UP),
             CONF_TTS_BACKEND: backend,
             CONF_TTS_MODEL: tts_model,
             CONF_TTS_VOICE: options.get(CONF_TTS_VOICE, DEFAULT_TTS_VOICE),
