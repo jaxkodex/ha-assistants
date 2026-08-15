@@ -141,6 +141,7 @@ Everything is configured through the UI; there is no YAML.
 | Temperature / Top P / Max tokens | 1.0 / 1.0 / 3000 | |
 | Enable thinking mode | off | More accurate, noticeably slower — usually not worth it for voice |
 | Keep listening after each reply | off | See below |
+| Turns before the wake word is needed again | 3 | Only applies when the above is on |
 | Text-to-speech provider | CosyVoice | Or Qwen-TTS |
 | Speech-to-text provider | Qwen-ASR | |
 
@@ -154,6 +155,12 @@ behaviour and needs nothing from this integration.
 command never needs the wake word. The cost is real: the microphone re-arms
 after each answer, so more room audio is streamed to Alibaba and ordinary
 conversation is more likely to be picked up as a command. It is off by default.
+
+It is also **capped**, at three turns per wake word by default. The cap is not
+a nicety — without one the conversation has no exit. Every reply reopens the
+microphone, and any noise loud enough to transcribe starts another turn, so the
+satellite keeps going until you mute it. Raise the limit if three is too few,
+but do not expect the conversation to end on its own without one.
 
 ### Using it in a voice pipeline
 

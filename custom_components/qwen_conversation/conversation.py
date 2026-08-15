@@ -23,6 +23,7 @@ from .const import (
     CONF_CHAT_MODEL,
     CONF_ENABLE_THINKING,
     CONF_FOLLOW_UP,
+    CONF_FOLLOW_UP_TURNS,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_TEMPERATURE,
@@ -30,6 +31,7 @@ from .const import (
     DEFAULT_CHAT_MODEL,
     DEFAULT_ENABLE_THINKING,
     DEFAULT_FOLLOW_UP,
+    DEFAULT_FOLLOW_UP_TURNS,
     DEFAULT_MAX_TOKENS,
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_P,
@@ -218,8 +220,21 @@ class QwenConversationEntity(conversation.ConversationEntity, QwenBaseEntity):
         # Home Assistant already continues on its own when the reply ends in a
         # question mark; this widens that to every reply so a satellite does
         # not need a second wake word for a follow-up.
+        #
+        # Bounded on purpose. Reopening the microphone unconditionally means
+        # the conversation has no exit: each reply re-arms it, and any noise
+        # that transcribes starts another turn. The cap counts user turns in
+        # this chat log, so it resets naturally on the next wake word.
         if options.get(CONF_FOLLOW_UP, DEFAULT_FOLLOW_UP):
-            result.continue_conversation = True
+            limit = options.get(CONF_FOLLOW_UP_TURNS, DEFAULT_FOLLOW_UP_TURNS)
+            turns = sum(1 for content in chat_log.content if content.role == "user")
+            if turns < limit:
+                result.continue_conversation = True
+            else:
+                LOGGER.debug(
+                    "Follow-up limit of %d turns reached, requiring the wake word",
+                    limit,
+                )
 
         return result
 

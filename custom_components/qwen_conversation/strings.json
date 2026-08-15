@@ -70,6 +70,7 @@
           "top_p": "Top P",
           "enable_thinking": "Enable thinking mode",
           "follow_up": "Keep listening after each reply",
+          "follow_up_turns": "Turns before the wake word is needed again",
           "tts_backend": "Text-to-speech provider",
           "tts_model": "Text-to-speech model",
           "tts_voice": "Voice",
@@ -81,6 +82,7 @@
           "llm_hass_api": "Leave empty to answer questions only, without controlling devices.",
           "enable_thinking": "Lets the model reason before answering. More accurate but noticeably slower, so it is off by default for voice.",
           "follow_up": "A voice satellite normally needs the wake word again for every command; Home Assistant only reopens the microphone by itself when a reply ends in a question. This reopens it after every reply, which sends more room audio to Alibaba and picks up more stray speech.",
+          "follow_up_turns": "How many turns one wake word may carry. Without a limit the conversation never ends by itself: every reply reopens the microphone, and any noise loud enough to transcribe starts another turn.",
           "tts_voice": "CosyVoice voices belong to a specific model generation and are not interchangeable. Change the model first, then reopen this page to see the matching voices.",
           "stt_model": "Qwen-ASR auto-detects the spoken language when the pipeline does not specify one."
         }

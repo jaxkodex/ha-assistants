@@ -85,6 +85,15 @@ CONF_RECOMMENDED: Final = "recommended"
 CONF_FOLLOW_UP: Final = "follow_up"
 DEFAULT_FOLLOW_UP: Final = False
 
+# How many turns a single wake word may carry before the microphone stops
+# reopening. Without a cap the conversation never ends on its own: every reply
+# re-arms the microphone, and any noise loud enough to transcribe starts
+# another turn, so the satellite can loop indefinitely with no way out but the
+# mute button. Counted from the chat log, so it resets with each wake word.
+CONF_FOLLOW_UP_TURNS: Final = "follow_up_turns"
+DEFAULT_FOLLOW_UP_TURNS: Final = 3
+MAX_FOLLOW_UP_TURNS: Final = 20
+
 # Verified as available through DashScope compatible-mode as of 2026-07.
 # The selector is a combobox, so unlisted or pinned dated snapshots such as
 # ``qwen3.6-flash-2026-04-16`` can also be entered by hand.

@@ -40,6 +40,7 @@ from .const import (
     CONF_CHAT_MODEL,
     CONF_ENABLE_THINKING,
     CONF_FOLLOW_UP,
+    CONF_FOLLOW_UP_TURNS,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_REGION,
@@ -60,6 +61,7 @@ from .const import (
     DEFAULT_CHAT_MODEL,
     DEFAULT_ENABLE_THINKING,
     DEFAULT_FOLLOW_UP,
+    DEFAULT_FOLLOW_UP_TURNS,
     DEFAULT_MAX_TOKENS,
     DEFAULT_NAME,
     DEFAULT_REGION,
@@ -73,6 +75,7 @@ from .const import (
     DEFAULT_TTS_VOICE,
     DOMAIN,
     LOGGER,
+    MAX_FOLLOW_UP_TURNS,
     QWEN_ASR_MODELS,
     QWEN_TTS_MODELS,
     QWEN_TTS_VOICES,
@@ -425,6 +428,14 @@ class QwenOptionsFlow(OptionsFlow):
                 ),
                 vol.Required(CONF_ENABLE_THINKING): bool,
                 vol.Required(CONF_FOLLOW_UP): bool,
+                vol.Required(CONF_FOLLOW_UP_TURNS): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=MAX_FOLLOW_UP_TURNS,
+                        step=1,
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
                 vol.Required(CONF_TTS_BACKEND): SelectSelector(
                     SelectSelectorConfig(
                         options=[TTS_BACKEND_COSYVOICE, TTS_BACKEND_QWEN],
@@ -456,6 +467,9 @@ class QwenOptionsFlow(OptionsFlow):
                 CONF_ENABLE_THINKING, DEFAULT_ENABLE_THINKING
             ),
             CONF_FOLLOW_UP: options.get(CONF_FOLLOW_UP, DEFAULT_FOLLOW_UP),
+            CONF_FOLLOW_UP_TURNS: options.get(
+                CONF_FOLLOW_UP_TURNS, DEFAULT_FOLLOW_UP_TURNS
+            ),
             CONF_TTS_BACKEND: backend,
             CONF_TTS_MODEL: tts_model,
             CONF_TTS_VOICE: options.get(CONF_TTS_VOICE, DEFAULT_TTS_VOICE),

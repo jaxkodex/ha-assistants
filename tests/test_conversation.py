@@ -8,7 +8,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from custom_components.qwen_conversation.const import CONF_FOLLOW_UP
+from custom_components.qwen_conversation.const import (
+    CONF_FOLLOW_UP,
+    CONF_FOLLOW_UP_TURNS,
+)
 from custom_components.qwen_conversation.conversation import (
     _convert_content_to_messages,
     _transform_stream,
@@ -215,3 +218,46 @@ async def test_follow_up_keeps_the_conversation_open(
     )
 
     assert result.continue_conversation is True
+
+
+async def test_follow_up_stops_at_the_turn_limit(
+    hass: HomeAssistant, init_integration, mock_openai
+) -> None:
+    """The wake word is required again once the turn cap is reached.
+
+    Without this the conversation has no exit: every reply reopens the
+    microphone and any transcribable noise starts another turn.
+    """
+    hass.config_entries.async_update_entry(
+        init_integration,
+        options={
+            **init_integration.options,
+            CONF_FOLLOW_UP: True,
+            CONF_FOLLOW_UP_TURNS: 2,
+        },
+    )
+    await hass.async_block_till_done()
+
+    def reply():
+        async def stream():
+            yield _chunk(content="Done.")
+            yield _chunk(finish_reason="stop")
+
+        return stream()
+
+    conversation_id = None
+    seen = []
+    for _ in range(3):
+        mock_openai.chat.completions.create = AsyncMock(return_value=reply())
+        result = await conversation.async_converse(
+            hass,
+            "turn on the light",
+            conversation_id,
+            None,
+            agent_id="conversation.qwen_conversation",
+        )
+        conversation_id = result.conversation_id
+        seen.append(result.continue_conversation)
+
+    # Two turns carried by one wake word, then it stops asking for more.
+    assert seen == [True, False, False]
